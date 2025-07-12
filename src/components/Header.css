@@ -1,0 +1,77 @@
+.header {
+  background-color: #2c3e50;
+  color: white;
+  padding: 0 2rem 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-title-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 0 0.5rem 0;
+}
+
+.site-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-title {
+  font-size: 2rem;
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.username-label {
+  font-weight: bold;
+  color: #ffd700;
+  margin-right: 1rem;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.nav a:hover {
+  background-color: #34495e;
+  text-decoration: none;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 1rem 1rem 1rem;
+  }
+  .site-title {
+    font-size: 1.2rem;
+  }
+  .nav {
+    gap: 1rem;
+  }
+  .nav a {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .header-title-wrapper {
+    padding: 1rem 0 0.5rem 0;
+  }
+  .username-label {
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+  }
+} 
