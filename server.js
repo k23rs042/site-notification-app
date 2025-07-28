@@ -3,6 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
 const fs = require('fs');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const PORT = 3001;
@@ -11,90 +12,64 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// asobistoreのグッズ一覧を取得
+// asobistoreのグッズ一覧を取得（全ページ対応）
 app.get('/api/asobistore', async (req, res) => {
   try {
     const category = req.query.category || '10107';
-    const url = `https://shop.asobistore.jp/category/${category}/`;
-    
-    console.log(`Fetching asobistore: ${url}`);
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
-
-    // Save HTML for debugging
-    fs.writeFileSync('asobistore_debug.html', response.data);
-    console.log('HTML saved to asobistore_debug.html');
-
-    const $ = cheerio.load(response.data);
-    
-    // Debug HTML structure
-    console.log('=== HTML structure debug ===');
-    console.log(`Page title: ${$('title').text()}`);
-    console.log(`Total elements with .itemList: ${$('.itemList').length}`);
-    console.log(`Total elements with .item: ${$('.item').length}`);
-    console.log(`Total elements with .product-item: ${$('.product-item').length}`);
-    console.log(`Total elements with .itemName: ${$('.itemName').length}`);
-    console.log(`Total elements with .product-name: ${$('.product-name').length}`);
-    console.log(`Total elements with .name: ${$('.name').length}`);
-    console.log(`Total elements with .title: ${$('.title').length}`);
-    console.log(`Total elements with .goods: ${$('.goods').length}`);
-    console.log(`Total elements with .product: ${$('.product').length}`);
-    console.log(`Total elements with .itemList li: ${$('.itemList li').length}`);
-    console.log(`Total elements with .product-list li: ${$('.product-list li').length}`);
-    console.log(`Total elements with .itemList .item: ${$('.itemList .item').length}`);
-    console.log(`Total elements with .product-list .item: ${$('.product-list .item').length}`);
-    console.log(`Total a tags: ${$('a').length}`);
-    console.log(`Total img tags: ${$('img').length}`);
-    
-    // Try different selectors
-    console.log(`Selector ".itemList .item" found ${$('.itemList .item').length} elements`);
-    console.log(`Selector ".product-item" found ${$('.product-item').length} elements`);
-    console.log(`Selector ".item" found ${$('.item').length} elements`);
-    console.log(`Selector ".product" found ${$('.product').length} elements`);
-    console.log(`Selector ".goods-item" found ${$('.goods-item').length} elements`);
-    console.log(`Selector ".itemList li" found ${$('.itemList li').length} elements`);
-    console.log(`Selector ".product-list li" found ${$('.product-list li').length} elements`);
-    console.log(`Selector ".itemList .product" found ${$('.itemList .product').length} elements`);
-    console.log(`Selector ".product-list .product" found ${$('.product-list .product').length} elements`);
-    console.log(`Selector ".itemList .goods" found ${$('.itemList .goods').length} elements`);
-    console.log(`Selector ".product-list .goods" found ${$('.product-list .goods').length} elements`);
-
-    // Use the correct selector based on actual HTML structure
-    const items = [];
-    $('.item_box').each((index, element) => {
-      const $item = $(element);
-      const $nameElement = $item.find('.name.product_name_area a');
-      const $priceElement = $item.find('.selling_price');
-      const $imageElement = $item.find('img');
-      
-      if ($nameElement.length > 0) {
-        const name = $nameElement.text().trim();
-        const url = 'https://shop.asobistore.jp' + $nameElement.attr('href');
-        const price = $priceElement.text().trim();
-        let imageUrl = $imageElement.attr('data-src') || $imageElement.attr('src');
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
-          imageUrl = 'https://shop.asobistore.jp' + imageUrl;
+    let page = 1;
+    let hasNext = true;
+    const allItems = [];
+    while (hasNext) {
+      const url = `https://shop.asobistore.jp/category/${category}/` + (page > 1 ? `?p=${page}` : '');
+      console.log(`Fetching asobistore: ${url}`);
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        const image = imageUrl || 'https://via.placeholder.com/120x120?text=No+Image';
-        items.push({
-          id: `asobistore-${index}`,
-          name,
-          url,
-          image,
-          price,
-          source: 'asobistore'
-        });
+      });
+      // デバッグ用に1ページ目だけ保存
+      if (page === 1) {
+        fs.writeFileSync('asobistore_debug.html', response.data);
+        console.log('HTML saved to asobistore_debug.html');
       }
-    });
-
-    if (items.length === 0) {
+      const $ = cheerio.load(response.data);
+      let foundItems = 0;
+      $('.item_box').each((index, element) => {
+        const $item = $(element);
+        const $nameElement = $item.find('.name.product_name_area a');
+        const $priceElement = $item.find('.selling_price');
+        const $imageElement = $item.find('img');
+        if ($nameElement.length > 0) {
+          const name = $nameElement.text().trim();
+          const url = 'https://shop.asobistore.jp' + $nameElement.attr('href');
+          const price = $priceElement.text().trim();
+          let imageUrl = $imageElement.attr('data-src') || $imageElement.attr('src');
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
+            imageUrl = 'https://shop.asobistore.jp' + imageUrl;
+          }
+          const image = imageUrl || 'https://via.placeholder.com/120x120?text=No+Image';
+          allItems.push({
+            id: `asobistore-p${page}-${index}`,
+            name,
+            url,
+            image,
+            price,
+            source: 'asobistore',
+            category: 'anime'
+          });
+          foundItems++;
+        }
+      });
+      // 次ページがあるか判定（li.nextが存在し、disabledでなければ続行）
+      const nextLi = $('.pagination li.next');
+      const isNextDisabled = nextLi.hasClass('disabled') || nextLi.attr('aria-disabled') === 'true';
+      hasNext = nextLi.length > 0 && !isNextDisabled && foundItems > 0;
+      page++;
+    }
+    if (allItems.length === 0) {
       console.log('No items found, returning dummy data');
-      // Return dummy data for testing
-      items.push(
+      allItems.push(
         {
           id: 'asobistore-dummy-1',
           name: '学園アイドルマスター Tシャツ 藤田ことね',
@@ -121,9 +96,8 @@ app.get('/api/asobistore', async (req, res) => {
         }
       );
     }
-
-    console.log(`Found ${items.length} items from asobistore`);
-    res.json(items);
+    console.log(`Found ${allItems.length} items from asobistore (all pages)`);
+    res.json(allItems);
   } catch (error) {
     console.error('Error fetching from asobistore:', error.message);
     res.status(500).json({ error: 'Failed to fetch from asobistore' });
@@ -137,23 +111,18 @@ app.get('/api/amiami', async (req, res) => {
     const url = `https://slist.amiami.jp/top/search/list?s_originaltitle_id=${originaltitle_id}&pagemax=40&getcnt=0&pagecnt=2`;
     
     console.log(`Fetching amiami: ${url}`);
-    
-    const { data } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'ja,en-US;q=0.7,en;q=0.3',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
-      }
-    });
+    // Puppeteerでページ取得
+    const browser = await puppeteer.launch({ headless: 'new' });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2' });
+    const html = await page.content();
+    await browser.close();
     
     // HTMLをファイルに保存してデバッグ
-    fs.writeFileSync('amiami_debug.html', data);
+    fs.writeFileSync('amiami_debug.html', html);
     console.log('HTML saved to amiami_debug.html');
     
-    const $ = cheerio.load(data);
+    const $ = cheerio.load(html);
     const items = [];
     
     // HTML構造を詳細にデバッグ
@@ -209,7 +178,6 @@ app.get('/api/amiami', async (req, res) => {
             });
           }
         });
-        
         if (items.length > 0) {
           break;
         }

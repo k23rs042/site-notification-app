@@ -43,60 +43,35 @@ function Works() {
       setGoods([]);
       return;
     }
-
-    // 学園アイドルマスターの場合のみAPIから取得
-    if (activeTag === '学園アイドルマスター') {
-      setLoading(true);
-      setError(null);
-      
-      fetch(`http://localhost:3001/api/goods/${encodeURIComponent(activeTag)}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('APIからデータを取得できませんでした');
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('API response:', data);
-          setGoods(data);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error('API fetch error:', err);
-          setError(err.message);
-          setLoading(false);
-          // エラー時はダミーデータを表示
-          setGoods([
-            {
-              id: 'fallback-1',
-              name: '学園アイドルマスター Tシャツ 藤田ことね',
-              image: 'https://shop.asobistore.jp/simages/product_image_huge/4573685102001_220_gkmas_undokai_special_003_.jpg?1',
-              url: 'https://shop.asobistore.jp/products/detail/219880-00-00-00',
-              source: 'asobistore'
-            },
-            {
-              id: 'fallback-2',
-              name: '学園アイドルマスター Tシャツ 月村手毬',
-              image: 'https://shop.asobistore.jp/simages/product_image_huge/4573685102001_220_gkmas_undokai_special_002_.jpg?1',
-              url: 'https://shop.asobistore.jp/products/detail/219879-00-00-00',
-              source: 'asobistore'
-            }
-          ]);
-        });
-    } else {
-      // 他の作品はダミーデータ
-      const dummyGoods = Array.from({ length: 10 }, (_, i) => ({
-        id: `${activeTag}-${i + 1}`,
-        title: activeTag,
-        name: `${activeTag}グッズ${i + 1}`,
-        image: 'https://via.placeholder.com/120x120?text=Goods',
-        url: i % 2 === 0
-          ? 'https://shop.asobistore.jp/category/10107/'
-          : 'https://list.amiami.jp/top/search/list?s_originaltitle_id=36257&pagecnt=40&getcnt=0&pagehnt=2',
-        category: allWorks.find(w => w.title === activeTag)?.category || 'anime',
-      }));
-      setGoods(dummyGoods);
-    }
+    setLoading(true);
+    setError(null);
+    fetch(`http://localhost:3001/api/goods/${encodeURIComponent(activeTag)}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('APIからデータを取得できませんでした');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setGoods(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+        // エラー時はダミーデータを表示
+        const dummyGoods = Array.from({ length: 10 }, (_, i) => ({
+          id: `${activeTag}-${i + 1}`,
+          title: activeTag,
+          name: `${activeTag}グッズ${i + 1}`,
+          image: 'https://via.placeholder.com/120x120?text=Goods',
+          url: i % 2 === 0
+            ? 'https://shop.asobistore.jp/category/10107/'
+            : 'https://list.amiami.jp/top/search/list?s_originaltitle_id=36257&pagecnt=40&getcnt=0&pagehnt=2',
+          category: allWorks.find(w => w.title === activeTag)?.category || 'anime',
+        }));
+        setGoods(dummyGoods);
+      });
   }, [activeTag]);
 
   // 検索・カテゴリフィルタリング
