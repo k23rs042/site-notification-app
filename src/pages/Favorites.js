@@ -18,7 +18,7 @@ function Favorites() {
       // お気に入り商品の詳細を取得
       if (favoriteIds.length > 0) {
         setLoading(true);
-        fetch('http://localhost:3001/api/gakuen-idolmaster')
+        fetch('http://site-notification-app-api.onrender.com/api/gakuen-idolmaster')
           .then(response => response.json())
           .then(data => {
             const favoriteItems = data.filter(item => favoriteIds.includes(item.id));

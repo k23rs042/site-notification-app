@@ -58,11 +58,11 @@ function Works() {
     // 作品に応じて適切なAPIエンドポイントを選択
     let apiUrl;
     if (activeTag === '学園アイドルマスター') {
-      apiUrl = 'http://localhost:3001/api/gakuen-idolmaster';
+      apiUrl = 'https://site-notification-app-api.onrender.com/api/gakuen-idolmaster';
     } else if (activeTag === '僕のヒーローアカデミア') {
-      apiUrl = 'http://localhost:3001/api/my-hero-academia';
+      apiUrl = 'https://site-notification-app-api.onrender.com/api/my-hero-academia';
     } else {
-      apiUrl = `http://localhost:3001/api/goods/${encodeURIComponent(activeTag)}`;
+      apiUrl = `https://site-notification-app-api.onrender.com/api/goods/${encodeURIComponent(activeTag)}`;
     }
     
     fetch(apiUrl)

@@ -6,8 +6,7 @@ const fs = require('fs');
 const puppeteer = require('puppeteer');
 
 const app = express();
-const PORT = 3001;
-
+const PORT = process.env.PORT || 3001;
 // CORS設定
 app.use(cors());
 app.use(express.json());
@@ -512,7 +511,7 @@ app.get('/api/goods/:title', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`API server running on http://localhost:${PORT}`);
   console.log('Available endpoints:');
   console.log(`  POST /api/login - ログイン`);
