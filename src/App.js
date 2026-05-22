@@ -14,7 +14,7 @@ function App() {
 
   return (
     <div>
-      <Header username={username} />
+      <Header username={username} setUsername={setUsername} />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />

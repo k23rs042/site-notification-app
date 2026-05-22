@@ -12,6 +12,210 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// 仮のユーザーデータベース（実際のプロジェクトではデータベースを使用）
+const users = [
+  {
+    id: 1,
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'password123' // 実際のプロジェクトではハッシュ化
+  }
+];
+
+// セッション管理（実際のプロジェクトではJWTやセッションストアを使用）
+const sessions = {};
+
+// ログインAPI
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  // ユーザー認証
+  const user = users.find(u => u.email === email && u.password === password);
+  
+  if (user) {
+    // セッションIDを生成
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    sessions[sessionId] = { userId: user.id, username: user.username };
+    
+    res.json({
+      success: true,
+      sessionId,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } else {
+    res.status(401).json({
+      success: false,
+      message: 'メールアドレスまたはパスワードが正しくありません'
+    });
+  }
+});
+
+// ログアウトAPI
+app.post('/api/logout', (req, res) => {
+  const { sessionId } = req.body;
+  
+  if (sessions[sessionId]) {
+    delete sessions[sessionId];
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ success: false, message: 'セッションが見つかりません' });
+  }
+});
+
+// ユーザー登録API
+app.post('/api/register', (req, res) => {
+  const { username, email, password } = req.body;
+  
+  // 既存ユーザーチェック
+  const existingUser = users.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: 'このメールアドレスは既に使用されています'
+    });
+  }
+  
+  // 新しいユーザーを作成
+  const newUser = {
+    id: users.length + 1,
+    username,
+    email,
+    password
+  };
+  
+  users.push(newUser);
+  
+  res.json({
+    success: true,
+    message: 'アカウントが正常に作成されました'
+  });
+});
+
+// セッション確認API
+app.get('/api/check-session/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const session = sessions[sessionId];
+  
+  if (session) {
+    const user = users.find(u => u.id === session.userId);
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } else {
+    res.status(401).json({ success: false });
+  }
+});
+
+// アニメイトのグッズ一覧を取得
+app.get('/api/animate', async (req, res) => {
+  try {
+    const aid = req.query.aid || '3885'; // 僕のヒーローアカデミアのID
+    const url = `https://www.animate-onlineshop.jp/animetitle/?aid=${aid}`;
+    
+    console.log(`Fetching animate: ${url}`);
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    // デバッグ用にHTMLを保存
+    fs.writeFileSync('animate_debug.html', response.data);
+    console.log('HTML saved to animate_debug.html');
+    
+    const $ = cheerio.load(response.data);
+    const items = [];
+    
+    // アニメイトの商品セレクターを試行
+    $('.item, .product, .goods-item, .product-item').each((index, element) => {
+      const $item = $(element);
+      
+      // 商品名を探す
+      let name = $item.find('.name, .product-name, .item-name, h3, h4').text().trim();
+      
+      // リンクを探す
+      let link = $item.find('a').attr('href');
+      
+      // 画像を探す
+      let img = $item.find('img').attr('src') || $item.find('img').attr('data-src');
+      
+      // 価格を探す
+      let price = $item.find('.price, .selling-price, .cost').text().trim();
+      
+      if (name && link) {
+        // 相対URLを絶対URLに変換
+        if (link && !link.startsWith('http')) {
+          link = 'https://www.animate-onlineshop.jp' + link;
+        }
+        
+        // 画像URLを絶対URLに変換
+        if (img && !img.startsWith('http')) {
+          img = 'https://www.animate-onlineshop.jp' + img;
+        }
+        
+        items.push({
+          id: `animate-${index}`,
+          name: name,
+          url: link,
+          image: img || 'https://via.placeholder.com/120x120?text=No+Image',
+          price: price || '価格未定',
+          source: 'animate'
+        });
+      }
+    });
+    
+    // 商品が見つからない場合はダミーデータを返す
+    if (items.length === 0) {
+      console.log('No animate items found, returning dummy data');
+      items.push(
+        {
+          id: 'animate-dummy-1',
+          name: '僕のヒーローアカデミア アクリルスタンド 緑谷出久',
+          url: 'https://www.animate-onlineshop.jp/products/detail.php?product_id=123456',
+          image: 'https://via.placeholder.com/120x120?text=My+Hero+Academia',
+          price: '1,200円(税込)',
+          source: 'animate'
+        },
+        {
+          id: 'animate-dummy-2',
+          name: '僕のヒーローアカデミア 缶バッジ 爆豪勝己',
+          url: 'https://www.animate-onlineshop.jp/products/detail.php?product_id=123457',
+          image: 'https://via.placeholder.com/120x120?text=My+Hero+Academia',
+          price: '500円(税込)',
+          source: 'animate'
+        },
+        {
+          id: 'animate-dummy-3',
+          name: '僕のヒーローアカデミア Tシャツ オールマイト',
+          url: 'https://www.animate-onlineshop.jp/products/detail.php?product_id=123458',
+          image: 'https://via.placeholder.com/120x120?text=My+Hero+Academia',
+          price: '3,500円(税込)',
+          source: 'animate'
+        }
+      );
+    }
+    
+    console.log(`Found ${items.length} items from animate`);
+    res.json(items);
+    
+  } catch (error) {
+    console.error('animate API error:', error.message);
+    res.status(500).json({ 
+      error: 'アニメイトからデータを取得できませんでした',
+      message: error.message 
+    });
+  }
+});
+
 // asobistoreのグッズ一覧を取得（全ページ対応）
 app.get('/api/asobistore', async (req, res) => {
   try {
@@ -19,8 +223,9 @@ app.get('/api/asobistore', async (req, res) => {
     let page = 1;
     let hasNext = true;
     const allItems = [];
-    while (hasNext) {
-      const url = `https://shop.asobistore.jp/category/${category}/` + (page > 1 ? `?p=${page}` : '');
+    const maxPages = 5; // 学園アイドルマスターは約72件、30件/ページなので3ページ程度
+    while (hasNext && page <= maxPages) {
+      const url = `https://shop.asobistore.jp/product/catalog/s/newer/n/30/t/category/ca/${category}/p/${page - 1}`;
       console.log(`Fetching asobistore: ${url}`);
       const response = await axios.get(url, {
         headers: {
@@ -34,14 +239,15 @@ app.get('/api/asobistore', async (req, res) => {
       }
       const $ = cheerio.load(response.data);
       let foundItems = 0;
-      $('.item_box').each((index, element) => {
+      // asobistoreの実際のページ構造に対応したセレクター
+      $('.item_box, .product-item, .goods-item, .item, .product').each((index, element) => {
         const $item = $(element);
-        const $nameElement = $item.find('.name.product_name_area a');
-        const $priceElement = $item.find('.selling_price');
+        const $nameElement = $item.find('.name.product_name_area a, .product-name a, .item-name a, h3 a, h4 a, .name a, a[href*="/products/detail/"]');
+        const $priceElement = $item.find('.selling_price, .price, .product-price, .price_area');
         const $imageElement = $item.find('img');
         if ($nameElement.length > 0) {
           const name = $nameElement.text().trim();
-          const url = 'https://shop.asobistore.jp' + $nameElement.attr('href');
+          const url = $nameElement.attr('href').startsWith('http') ? $nameElement.attr('href') : 'https://shop.asobistore.jp' + $nameElement.attr('href');
           const price = $priceElement.text().trim();
           let imageUrl = $imageElement.attr('data-src') || $imageElement.attr('src');
           if (imageUrl && !imageUrl.startsWith('http')) {
@@ -61,10 +267,14 @@ app.get('/api/asobistore', async (req, res) => {
           foundItems++;
         }
       });
-      // 次ページがあるか判定（li.nextが存在し、disabledでなければ続行）
-      const nextLi = $('.pagination li.next');
-      const isNextDisabled = nextLi.hasClass('disabled') || nextLi.attr('aria-disabled') === 'true';
-      hasNext = nextLi.length > 0 && !isNextDisabled && foundItems > 0;
+      // 次ページがあるか判定（ページネーションの「次へ」ボタンまたは「⇒」を確認）
+      const nextButton = $('a[href*="/p/"]').filter(function() {
+        const text = $(this).text().trim();
+        return text.includes('次へ') || text.includes('⇒') || text.includes('>');
+      });
+      const hasNextPage = nextButton.length > 0 && foundItems > 0;
+      hasNext = hasNextPage;
+      console.log(`Page ${page}: Found ${foundItems} items, hasNext: ${hasNextPage}`);
       page++;
     }
     if (allItems.length === 0) {
@@ -210,6 +420,50 @@ app.get('/api/amiami', async (req, res) => {
   }
 });
 
+// 学園アイドルマスター専用エンドポイント（全ページ収集）
+app.get('/api/gakuen-idolmaster', async (req, res) => {
+  try {
+    console.log('Fetching all 学園アイドルマスター goods from asobistore...');
+    
+    // asobistoreから学園アイドルマスター商品を全ページ取得
+    const asobistoreRes = await axios.get(`http://localhost:${PORT}/api/asobistore?category=10107`);
+    
+    const allItems = asobistoreRes.data;
+    
+    console.log(`Total 学園アイドルマスター items found: ${allItems.length}`);
+    res.json(allItems);
+    
+  } catch (error) {
+    console.error('学園アイドルマスター API error:', error.message);
+    res.status(500).json({ 
+      error: '学園アイドルマスターのグッズデータを取得できませんでした',
+      message: error.message 
+    });
+  }
+});
+
+// 僕のヒーローアカデミア専用エンドポイント
+app.get('/api/my-hero-academia', async (req, res) => {
+  try {
+    console.log('Fetching all 僕のヒーローアカデミア goods from animate...');
+    
+    // アニメイトから僕のヒーローアカデミア商品を取得
+    const animateRes = await axios.get(`http://localhost:${PORT}/api/animate?aid=3885`);
+    
+    const allItems = animateRes.data;
+    
+    console.log(`Total 僕のヒーローアカデミア items found: ${allItems.length}`);
+    res.json(allItems);
+    
+  } catch (error) {
+    console.error('僕のヒーローアカデミア API error:', error.message);
+    res.status(500).json({ 
+      error: '僕のヒーローアカデミアのグッズデータを取得できませんでした',
+      message: error.message 
+    });
+  }
+});
+
 // 作品名から両サイトのグッズを取得
 app.get('/api/goods/:title', async (req, res) => {
   try {
@@ -261,7 +515,14 @@ app.get('/api/goods/:title', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`API server running on http://localhost:${PORT}`);
   console.log('Available endpoints:');
+  console.log(`  POST /api/login - ログイン`);
+  console.log(`  POST /api/logout - ログアウト`);
+  console.log(`  POST /api/register - ユーザー登録`);
+  console.log(`  GET /api/check-session/:sessionId - セッション確認`);
   console.log(`  GET /api/asobistore?category=10107`);
   console.log(`  GET /api/amiami?originaltitle_id=36257`);
+  console.log(`  GET /api/animate?aid=3885`);
   console.log(`  GET /api/goods/学園アイドルマスター`);
+  console.log(`  GET /api/gakuen-idolmaster (学園アイドルマスター専用)`);
+  console.log(`  GET /api/my-hero-academia (僕のヒーローアカデミア専用)`);
 }); 

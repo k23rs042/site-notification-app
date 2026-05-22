@@ -23,9 +23,18 @@ function Works() {
   const [goods, setGoods] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [favorites, setFavorites] = useState([]);
 
   const ITEMS_PER_PAGE = 12;
   const [currentPage, setCurrentPage] = useState(1);
+
+  // お気に入りをローカルストレージから読み込み
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites));
+    }
+  }, []);
 
   // タグ一覧
   const tags = allWorks.map(w => w.title);
@@ -45,7 +54,18 @@ function Works() {
     }
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:3001/api/goods/${encodeURIComponent(activeTag)}`)
+    
+    // 作品に応じて適切なAPIエンドポイントを選択
+    let apiUrl;
+    if (activeTag === '学園アイドルマスター') {
+      apiUrl = 'http://localhost:3001/api/gakuen-idolmaster';
+    } else if (activeTag === '僕のヒーローアカデミア') {
+      apiUrl = 'http://localhost:3001/api/my-hero-academia';
+    } else {
+      apiUrl = `http://localhost:3001/api/goods/${encodeURIComponent(activeTag)}`;
+    }
+    
+    fetch(apiUrl)
       .then(response => {
         if (!response.ok) {
           throw new Error('APIからデータを取得できませんでした');
@@ -90,6 +110,16 @@ function Works() {
   useEffect(() => {
     setCurrentPage(1); // タグや検索が変わったら1ページ目に戻す
   }, [activeTag, searchTerm, selectedCategory]);
+
+  // お気に入りを切り替える関数
+  const toggleFavorite = (good) => {
+    const newFavorites = favorites.includes(good.id) 
+      ? favorites.filter(id => id !== good.id)
+      : [...favorites, good.id];
+    
+    setFavorites(newFavorites);
+    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+  };
 
   return (
     <div className="works-container">
@@ -142,28 +172,39 @@ function Works() {
 
       <div className="works-grid">
         {paginatedGoods.map((good, index) => (
-          <a
-            className="work-card"
-            key={good.id || `good-${index}`}
-            href={good.url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div className="work-image">
-              <img 
-                src={good.image} 
-                alt={good.name} 
-                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/120x120?text=No+Image';
-                }}
-              />
+          <div className="work-card" key={good.id || `good-${index}`}>
+            <div className="work-header">
+              <div className="work-image">
+                <img 
+                  src={good.image} 
+                  alt={good.name} 
+                  style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/120x120?text=No+Image';
+                  }}
+                />
+              </div>
+              <button 
+                className={`favorite-button ${favorites.includes(good.id) ? 'favorited' : ''}`}
+                onClick={() => toggleFavorite(good)}
+                title={favorites.includes(good.id) ? 'お気に入りから削除' : 'お気に入りに追加'}
+              >
+                ⭐
+              </button>
             </div>
             <div className="work-info">
               <h3 className="work-title">{good.name}</h3>
               {good.source && <span className="work-category">{good.source}</span>}
+              <a 
+                href={good.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="work-link"
+              >
+                商品ページ
+              </a>
             </div>
-          </a>
+          </div>
         ))}
       </div>
       

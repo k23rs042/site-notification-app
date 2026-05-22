@@ -7,6 +7,8 @@ function Login({ setUsername }) {
     email: '',
     password: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,11 +18,37 @@ function Login({ setUsername }) {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // 仮のログイン処理
-    setUsername('ユーザー名'); // 本来はAPIレスポンスのユーザー名
-    navigate('/');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // セッションIDをローカルストレージに保存
+        localStorage.setItem('sessionId', data.sessionId);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        setUsername(data.user.username);
+        navigate('/');
+      } else {
+        setError(data.message || 'ログインに失敗しました');
+      }
+    } catch (err) {
+      setError('サーバーエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,8 +78,9 @@ function Login({ setUsername }) {
               required
             />
           </div>
-          <button type="submit" className="login-button">
-            ログイン
+          {error && <div className="error-message">{error}</div>}
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
         <div className="register-link">

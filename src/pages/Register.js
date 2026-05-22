@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
 
 function Register() {
@@ -9,6 +9,10 @@ function Register() {
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -17,14 +21,46 @@ function Register() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
-      alert('パスワードが一致しません');
+      setError('パスワードが一致しません');
       return;
     }
-    // 登録処理をここに実装
-    console.log('Register attempt:', formData);
+    
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess(data.message);
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        setError(data.message || '登録に失敗しました');
+      }
+    } catch (err) {
+      setError('サーバーエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,8 +112,10 @@ function Register() {
               required
             />
           </div>
-          <button type="submit" className="register-button">
-            登録
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+          <button type="submit" className="register-button" disabled={loading}>
+            {loading ? '登録中...' : '登録'}
           </button>
         </form>
         <div className="login-link">
