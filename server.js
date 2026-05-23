@@ -400,7 +400,7 @@ try {
 });
 
 // 学園アイドルマスター専用エンドポイント（全ページ収集）
-aapp.get('/api/gakuen-idolmaster', async (req, res) => {
+app.get('/api/gakuen-idolmaster', async (req, res) => {
   try {
     console.log('Fetching all 学園アイドルマスター goods...');
 
