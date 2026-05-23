@@ -408,7 +408,9 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
       axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
       axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=12`, { timeout: 30000 }),
       axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=3`, { timeout: 45000 })
-     ]) const, allItems = [];
+    ]);
+
+    const allItems = [];
 
     if (asobistoreRes.status === 'fulfilled') {
       allItems.push(...asobistoreRes.value.data);
@@ -439,7 +441,6 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     });
   }
 });
-
 
 
 // 僕のヒーローアカデミア専用エンドポイント
