@@ -407,7 +407,7 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
 
     const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
       axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
-      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=50`, { timeout: 30000 }),
+      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=12`, { timeout: 30000 }),
       axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
     ]);
 
