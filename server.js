@@ -320,14 +320,26 @@ app.get('/api/amiami', async (req, res) => {
     
     console.log(`Fetching amiami: ${url}`);
     // Puppeteerでページ取得
-   const browser = await puppeteer.launch({
+   let browser;
+let html;
+
+try {
+  browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
-   });
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
-    const html = await page.content();
+  });
+
+  const page = await browser.newPage();
+  await page.setDefaultNavigationTimeout(20000);
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  html = await page.content();
+} finally {
+  if (browser) {
     await browser.close();
+  }
+}
     
     // HTMLをファイルに保存してデバッグ
     fs.writeFileSync('amiami_debug.html', html);
@@ -428,7 +440,7 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
 
     const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
       axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=20`),
-      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`),
+      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`, { timeout: 30000 }),
       axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
     ]);
 
