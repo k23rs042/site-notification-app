@@ -180,77 +180,7 @@ foundItems++;
     });
   }
 });
-app.get('/api/animate', async (req, res) => {
-  try {
-    const aid = req.query.aid || '3885';
-const maxPages = Number(req.query.maxPages || 20);
-const items = [];
-
-for (let page = 1; page <= maxPages; page++) {
-  const url = `https://www.animate-onlineshop.jp/animetitle/index.php?aid=${aid}&nd[]=7&ss=8&sl=0&pageno=${page}`;
-
-  const response = await axios.get(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-  });
-
-  const $ = cheerio.load(response.data);
-  let foundItems = 0;
-
-  $('li').each((index, element) => {
-    const $item = $(element);
-    const $link = $item.find('h3 a[href*="/pd/"]').first();
-
-    if ($link.length === 0) return;
-
-    const name = $link.text().trim();
-    let link = $link.attr('href');
-    let img = $item.find('.item_list_thumb img').attr('src');
-    const price = $item.find('.item_list_detail .price').first().text().trim();
-
- if (link && !link.startsWith('http')) {
-  link = 'https://www.animate-onlineshop.jp' + link;
-}
-
-if (img && !img.startsWith('http')) {
-  img = 'https://www.animate-onlineshop.jp' + img;
-}
-
-items.push({
-  id: `animate-p${page}-${index}`,
-  name,
-  url: link,
-  image: img || 'https://via.placeholder.com/120x120?text=No+Image',
-  price: price || '価格未定',
-  source: 'animate'
-});
-
-foundItems++;
-  });
-
-  if (foundItems === 0) {
-    break;
-  }
-}   
-    
-    // 商品が見つからない場合はダミーデータを返す
-    if (items.length === 0) {
-      console.log('No animate items found, returning dummy data');
-    }
-    
-    console.log(`Found ${items.length} items from animate`);
-    res.json(items);
-    
-  } catch (error) {
-    console.error('animate API error:', error.message);
-    res.status(500).json({ 
-      error: 'アニメイトからデータを取得できませんでした',
-      message: error.message 
-    });
-  }
-});
-
+  
 // asobistoreのグッズ一覧を取得（全ページ対応）
 app.get('/api/asobistore', async (req, res) => {
   try {
@@ -477,9 +407,8 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
       axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
       axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=12`, { timeout: 30000 }),
-      axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=12`, { timeout: 30000 })    ]);
-
-    const allItems = [];
+      axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=3`, { timeout: 45000 })
+     ]) const, allItems = [];
 
     if (asobistoreRes.status === 'fulfilled') {
       allItems.push(...asobistoreRes.value.data);
