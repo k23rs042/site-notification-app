@@ -26,7 +26,7 @@ function Works() {
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState([]);
 
-  const ITEMS_PER_PAGE = 12;
+  const ITEMS_PER_PAGE = 20;
   const [currentPage, setCurrentPage] = useState(1);
 
   // お気に入りをローカルストレージから読み込み
