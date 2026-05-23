@@ -135,31 +135,30 @@ app.get('/api/animate', async (req, res) => {
     const items = [];
     
     // アニメイトの商品セレクターを試行
-    $('.item, .product, .goods-item, .product-item').each((index, element) => {
-      const $item = $(element);
-      
-      // 商品名を探す
-      let name = $item.find('.name, .product-name, .item-name, h3, h4').text().trim();
-      
-      // リンクを探す
-      let link = $item.find('a').attr('href');
-      
-      // 画像を探す
-      let img = $item.find('img').attr('src') || $item.find('img').attr('data-src');
-      
-      // 価格を探す
-      let price = $item.find('.price, .selling-price, .cost').text().trim();
-      
-      if (name && link) {
-        // 相対URLを絶対URLに変換
-        if (link && !link.startsWith('http')) {
-          link = 'https://www.animate-onlineshop.jp' + link;
-        }
-        
-        // 画像URLを絶対URLに変換
-        if (img && !img.startsWith('http')) {
-          img = 'https://www.animate-onlineshop.jp' + img;
-        }
+    $('li').each((index, element) => {
+  const $item = $(element);
+  const $link = $item.find('h3 a[href*="/pd/"]').first();
+
+  if ($link.length === 0) return;
+
+  const name = $link.text().trim();
+  let link = $link.attr('href');
+  let img = $item.find('.item_list_thumb img').attr('src');
+  const price = $item.find('.item_list_detail .price').first().text().trim();
+
+  if (link && !link.startsWith('http')) {
+    link = 'https://www.animate-onlineshop.jp' + link;
+  }
+
+  items.push({
+    id: `animate-${index}`,
+    name,
+    url: link,
+    image: img || 'https://via.placeholder.com/120x120?text=No+Image',
+    price: price || '価格未定',
+    source: 'animate'
+  });
+});
         
         items.push({
           id: `animate-${index}`,
@@ -175,32 +174,6 @@ app.get('/api/animate', async (req, res) => {
     // 商品が見つからない場合はダミーデータを返す
     if (items.length === 0) {
       console.log('No animate items found, returning dummy data');
-      items.push(
-        {
-          id: 'animate-dummy-1',
-          name: '僕のヒーローアカデミア アクリルスタンド 緑谷出久',
-          url: 'https://www.animate-onlineshop.jp/products/detail.php?product_id=123456',
-          image: 'https://via.placeholder.com/120x120?text=My+Hero+Academia',
-          price: '1,200円(税込)',
-          source: 'animate'
-        },
-        {
-          id: 'animate-dummy-2',
-          name: '僕のヒーローアカデミア 缶バッジ 爆豪勝己',
-          url: 'https://www.animate-onlineshop.jp/products/detail.php?product_id=123457',
-          image: 'https://via.placeholder.com/120x120?text=My+Hero+Academia',
-          price: '500円(税込)',
-          source: 'animate'
-        },
-        {
-          id: 'animate-dummy-3',
-          name: '僕のヒーローアカデミア Tシャツ オールマイト',
-          url: 'https://www.animate-onlineshop.jp/products/detail.php?product_id=123458',
-          image: 'https://via.placeholder.com/120x120?text=My+Hero+Academia',
-          price: '3,500円(税込)',
-          source: 'animate'
-        }
-      );
     }
     
     console.log(`Found ${items.length} items from animate`);
