@@ -10,8 +10,13 @@
 - ログインページ
 - アカウント登録ページ
 
+## URL
+https://site-notification-app-1.onrender.com/
+
 ## セットアップ
 
+npm run server
+別のターミナルで以下を実行
 ```bash
 cd site-notification-app
 npm install
