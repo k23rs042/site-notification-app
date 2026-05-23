@@ -33,8 +33,8 @@ function Header({ username = 'ゲスト', setUsername }) {
   return (
     <header className="header">
       <div className="header-title-wrapper">
-        <Link to="/" className="site-title-link">
-          <h1 className="site-title">グッズまとめサイト（仮）</h1>
+        <Link to="/" className="site-logo-link" aria-label="トップページへ">
+           <img src="/header-bg.png" alt="" className="site-logo" />
         </Link>
       </div>
       <nav className="nav">
