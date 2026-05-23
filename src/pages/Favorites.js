@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './Works.css';
 
 function Favorites() {
-  const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
   const [favoriteGoods, setFavoriteGoods] = useState([]);
   const [loading, setLoading] = useState(false);
