@@ -29,7 +29,7 @@ function Home() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch('https://site-notification-app-3.onrender.com')
+    fetch('https://site-notification-app-3.onrender.com/api/gakuen-idolmaster')
       .then(response => {
         if (!response.ok) throw new Error('APIからデータを取得できませんでした');
         return response.json();
