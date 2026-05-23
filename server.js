@@ -124,14 +124,33 @@ app.get('/api/animate', async (req, res) => {
     for (let page = 1; page <= maxPages; page++) {
       const url = `https://www.animate-onlineshop.jp/animetitle/index.php?aid=${aid}&nd[]=7&ss=8&sl=0&pageno=${page}`;
 
-      const response = await axios.get(url, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-      });
+ let response;
 
-      const $ = cheerio.load(response.data);
+for (let retry = 0; retry < 3; retry++) {
+  try {
+    response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8'
+      }
+    });
+    break;
+  } catch (error) {
+    console.error(`animate page ${page} retry ${retry + 1} failed:`, error.message);
+
+    if (retry === 2) {
+      if (items.length > 0) {
+        return res.json(items);
+      }
+      throw error;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+  }
+}
+
+const $ = cheerio.load(response.data);
       let foundItems = 0;
 
       $('li').each((index, element) => {
@@ -169,6 +188,7 @@ foundItems++;
         break;
       }
     }
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     console.log(`Found ${items.length} items from animate`);
     res.json(items);
