@@ -185,7 +185,7 @@ app.get('/api/asobistore', async (req, res) => {
     let page = 1;
     let hasNext = true;
     const allItems = [];
-    const maxPages = Number(req.query.maxPages || 20);    while (hasNext && page <= maxPages) {
+    const maxPages = Number(req.query.maxPages || 50);    while (hasNext && page <= maxPages) {
       const url = `https://shop.asobistore.jp/product/catalog/s/newer/n/30/t/category/ca/${category}/p/${page - 1}`;
       console.log(`Fetching asobistore: ${url}`);
       const response = await axios.get(url, {
@@ -402,7 +402,7 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     console.log('Fetching all 学園アイドルマスター goods...');
 
     const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
-      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=20`),
+      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
       axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`, { timeout: 30000 }),
       axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
     ]);
