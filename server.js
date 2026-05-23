@@ -163,17 +163,7 @@ for (let page = 1; page <= maxPages; page++) {
   if (foundItems === 0) {
     break;
   }
-}
-
-  items.push({
-    id: `animate-${index}`,
-    name,
-    url: link,
-    image: img || 'https://via.placeholder.com/120x120?text=No+Image',
-    price: price || '価格未定',
-    source: 'animate'
-  });
-        
+}   
     
     // 商品が見つからない場合はダミーデータを返す
     if (items.length === 0) {
