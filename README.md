@@ -14,8 +14,9 @@
 https://site-notification-app-1.onrender.com/
 
 ## セットアップ
-
+```bash
 npm run server
+```
 別のターミナルで以下を実行
 ```bash
 cd site-notification-app
