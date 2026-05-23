@@ -426,7 +426,8 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     // asobistoreから学園アイドルマスター商品を全ページ取得
     const [asobistoreRes, amiamiRes] = await Promise.allSettled([
   axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=20`),
-  axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`)
+  axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`),
+  axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
 ]);
 
 const allItems = [];
@@ -449,6 +450,10 @@ if (amiamiRes.status === 'fulfilled') {
       message: error.message 
     });
   }
+
+  if (amiamiRes.status === 'rejected') {
+  console.error('amiami failed:', amiamiRes.reason.message);
+}
 });
 
 // 僕のヒーローアカデミア専用エンドポイント
