@@ -5,15 +5,16 @@ import './Works.css';
 const allWorks = [
   { title: '進撃の巨人', category: 'anime' },
   { title: '鬼滅の刃', category: 'anime' },
-  { title: 'ワンピース', category: 'manga' },
-  { title: 'ドラえもん', category: 'manga' },
+  { title: 'ワンピース', category: 'anime' },
+  { title: 'ドラえもん', category: 'anime' },
   { title: 'スパイファミリー', category: 'anime' },
-  { title: '呪術廻戦', category: 'manga' },
+  { title: '呪術廻戦', category: 'anime' },
   { title: '名探偵コナン', category: 'anime' },
-  { title: 'チェンソーマン', category: 'manga' },
-  { title: 'ハイキュー!!', category: 'anime' },
+  { title: 'チェンソーマン', category: 'anime' },
+  { title: '原神', category: 'game' },
   { title: '僕のヒーローアカデミア', category: 'anime' },
-  { title: '学園アイドルマスター', category: 'anime' },
+  { title: '学園アイドルマスター', category: 'game' },
+
 ];
 
 function Works() {
@@ -61,6 +62,8 @@ function Works() {
       apiUrl = 'https://site-notification-app-3.onrender.com/api/gakuen-idolmaster';
     } else if (activeTag === '僕のヒーローアカデミア') {
       apiUrl = 'https://site-notification-app-3.onrender.com/api/my-hero-academia';
+    } else if(activeTag === '原神'){
+      apiUrl = 'https://site-notification-app-3.onrender.com/api/genshin';
     } else {
       apiUrl = `https://site-notification-app-3.onrender.com/api/goods/${encodeURIComponent(activeTag)}`;
     }
@@ -153,7 +156,7 @@ function Works() {
           >
             <option value="all">すべて</option>
             <option value="anime">アニメ</option>
-            <option value="manga">漫画</option>
+            <option value="game">ゲーム</option>
           </select>
         </div>
       </div>

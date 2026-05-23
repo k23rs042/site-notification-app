@@ -63,7 +63,7 @@ function Home() {
           <select disabled>
             <option>すべて</option>
             <option>アニメ</option>
-            <option>漫画</option>
+            <option>ゲーム</option>
           </select>
         </div>
         <button 

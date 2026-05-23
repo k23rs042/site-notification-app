@@ -222,8 +222,7 @@ app.get('/api/asobistore', async (req, res) => {
     let page = 1;
     let hasNext = true;
     const allItems = [];
-    const maxPages = 5; // 学園アイドルマスターは約72件、30件/ページなので3ページ程度
-    while (hasNext && page <= maxPages) {
+    const maxPages = Number(req.query.maxPages || 20);    while (hasNext && page <= maxPages) {
       const url = `https://shop.asobistore.jp/product/catalog/s/newer/n/30/t/category/ca/${category}/p/${page - 1}`;
       console.log(`Fetching asobistore: ${url}`);
       const response = await axios.get(url, {
@@ -425,9 +424,20 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     console.log('Fetching all 学園アイドルマスター goods from asobistore...');
     
     // asobistoreから学園アイドルマスター商品を全ページ取得
-    const asobistoreRes = await axios.get(`http://localhost:${PORT}/api/asobistore?category=10107`);
-    
-    const allItems = asobistoreRes.data;
+    const [asobistoreRes, amiamiRes] = await Promise.allSettled([
+  axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=20`),
+  axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`)
+]);
+
+const allItems = [];
+
+if (asobistoreRes.status === 'fulfilled') {
+  allItems.push(...asobistoreRes.value.data);
+}
+
+if (amiamiRes.status === 'fulfilled') {
+  allItems.push(...amiamiRes.value.data);
+}
     
     console.log(`Total 学園アイドルマスター items found: ${allItems.length}`);
     res.json(allItems);
