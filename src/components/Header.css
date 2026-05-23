@@ -18,13 +18,28 @@
   line-height: 0;
 }
 
+/* PC */
 .header-image {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 220px;
+  max-height: 240px;
   object-fit: contain;
   object-position: center;
+}
+
+/* タブレット */
+@media (max-width: 1024px) {
+  .header-image {
+    max-height: 190px;
+  }
+}
+
+/* スマホ */
+@media (max-width: 768px) {
+  .header-image {
+    max-height: 130px;
+  }
 }
 
 .nav {
