@@ -31,12 +31,12 @@ function Header({ username = 'ゲスト', setUsername }) {
     navigate('/');
   };
   return (
-    <header className="header">
-      <div className="header-title-wrapper">
-        <Link to="/" className="site-logo-link" aria-label="トップページへ">
-           <img src="/header-bg.png" alt="" className="site-logo" />
-        </Link>
-      </div>
+   <header className="header">
+    <div className="header-title-wrapper">
+     <Link to="/" className="header-image-link" aria-label="トップページへ">
+       <img src="/header-bg.png" alt="" className="header-image" />
+     </Link>
+    </div>
       <nav className="nav">
         <span className="username-label">{username}</span>
         <Link to="/favorites">お気に入りの商品</Link>
