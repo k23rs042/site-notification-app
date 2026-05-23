@@ -410,7 +410,6 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
           axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=3`, { timeout: 45000 })
     ]);
 
-    const allItems = [];
     if (asobistoreRes.status === 'fulfilled') {
       allItems.push(...asobistoreRes.value.data);
     } else {
