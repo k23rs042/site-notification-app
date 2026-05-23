@@ -34,8 +34,7 @@ function Register() {
     setSuccess('');
     
     try {
-      const response = await fetch('https://site-notification-app-3.onrender.com/api/gakuen-idolmaster')
-        {
+      const response = await fetch('https://site-notification-app-3.onrender.com/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
