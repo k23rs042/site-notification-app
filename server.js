@@ -424,40 +424,47 @@ app.get('/api/amiami', async (req, res) => {
 // 学園アイドルマスター専用エンドポイント（全ページ収集）
 app.get('/api/gakuen-idolmaster', async (req, res) => {
   try {
-    console.log('Fetching all 学園アイドルマスター goods from asobistore...');
-    
-    // asobistoreから学園アイドルマスター商品を全ページ取得
-    const [asobistoreRes, amiamiRes] = await Promise.allSettled([
-  axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=20`),
-  axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`),
-  axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
-]);
+    console.log('Fetching all 学園アイドルマスター goods...');
 
-const allItems = [];
+    const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
+      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=20`),
+      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`),
+      axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
+    ]);
 
-if (asobistoreRes.status === 'fulfilled') {
-  allItems.push(...asobistoreRes.value.data);
-}
+    const allItems = [];
 
-if (amiamiRes.status === 'fulfilled') {
-  allItems.push(...amiamiRes.value.data);
-}
-    
+    if (asobistoreRes.status === 'fulfilled') {
+      allItems.push(...asobistoreRes.value.data);
+    } else {
+      console.error('asobistore failed:', asobistoreRes.reason.message);
+    }
+
+    if (amiamiRes.status === 'fulfilled') {
+      allItems.push(...amiamiRes.value.data);
+    } else {
+      console.error('amiami failed:', amiamiRes.reason.message);
+    }
+
+    if (animateRes.status === 'fulfilled') {
+      allItems.push(...animateRes.value.data);
+    } else {
+      console.error('animate failed:', animateRes.reason.message);
+    }
+
     console.log(`Total 学園アイドルマスター items found: ${allItems.length}`);
     res.json(allItems);
-    
+
   } catch (error) {
     console.error('学園アイドルマスター API error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: '学園アイドルマスターのグッズデータを取得できませんでした',
-      message: error.message 
+      message: error.message
     });
   }
-
-  if (amiamiRes.status === 'rejected') {
-  console.error('amiami failed:', amiamiRes.reason.message);
-}
 });
+
+
 
 // 僕のヒーローアカデミア専用エンドポイント
 app.get('/api/my-hero-academia', async (req, res) => {
