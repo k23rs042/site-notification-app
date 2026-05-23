@@ -34,8 +34,8 @@ function Register() {
     setSuccess('');
     
     try {
-      const response = await fetch('https://site-notification-app-api.onrender.com'
-/api/register', {
+      const response = await fetch('https://site-notification-app-3.onrender.com'
+        {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
