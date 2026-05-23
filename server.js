@@ -160,16 +160,6 @@ app.get('/api/animate', async (req, res) => {
   });
 });
         
-        items.push({
-          id: `animate-${index}`,
-          name: name,
-          url: link,
-          image: img || 'https://via.placeholder.com/120x120?text=No+Image',
-          price: price || '価格未定',
-          source: 'animate'
-        });
-      }
-    });
     
     // 商品が見つからない場合はダミーデータを返す
     if (items.length === 0) {
