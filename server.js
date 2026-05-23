@@ -420,14 +420,14 @@ try {
 });
 
 // 学園アイドルマスター専用エンドポイント（全ページ収集）
+// 学園アイドルマスター専用エンドポイント
 app.get('/api/gakuen-idolmaster', async (req, res) => {
   try {
     console.log('Fetching all 学園アイドルマスター goods...');
 
-    const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
-      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
-      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257`, { timeout: 10000 }),
-      axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=3`, { timeout: 45000 })
+    const [asobistoreRes, animateRes] = await Promise.allSettled([
+      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=7`, { timeout: 25000 }),
+      axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=3`, { timeout: 25000 })
     ]);
 
     const allItems = [];
@@ -436,12 +436,6 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
       allItems.push(...asobistoreRes.value.data);
     } else {
       console.error('asobistore failed:', asobistoreRes.reason.message);
-    }
-
-    if (amiamiRes.status === 'fulfilled') {
-      allItems.push(...amiamiRes.value.data);
-    } else {
-      console.error('amiami failed:', amiamiRes.reason.message);
     }
 
     if (animateRes.status === 'fulfilled') {
