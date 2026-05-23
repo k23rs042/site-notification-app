@@ -173,7 +173,6 @@ for (let page = 1; page <= maxPages; page++) {
     price: price || '価格未定',
     source: 'animate'
   });
-});
         
     
     // 商品が見つからない場合はダミーデータを返す
@@ -417,8 +416,8 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     console.log('Fetching all 学園アイドルマスター goods...');
 
     const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
-      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=12`),
-      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=12`, { timeout: 30000 }),
+      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
+      axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=50`, { timeout: 30000 }),
       axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
     ]);
 
