@@ -147,16 +147,6 @@ for (let page = 1; page <= maxPages; page++) {
     if (link && !link.startsWith('http')) {
       link = 'https://www.animate-onlineshop.jp' + link;
     }
-
-    items.push({
-      id: `animate-p${page}-${index}`,
-      name,
-      url: link,
-      image: img || 'https://via.placeholder.com/120x120?text=No+Image',
-      price: price || '価格未定',
-      source: 'animate'
-    });
-
     foundItems++;
   });
 
@@ -408,8 +398,7 @@ app.get('/api/gakuen-idolmaster', async (req, res) => {
     const [asobistoreRes, amiamiRes, animateRes] = await Promise.allSettled([
       axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=50`),
       axios.get(`http://localhost:${PORT}/api/amiami?originaltitle_id=36257&maxpage=12`, { timeout: 30000 }),
-      axios.get(`http://localhost:${PORT}/api/animate?aid=18937`)
-    ]);
+      axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=12`, { timeout: 30000 })    ]);
 
     const allItems = [];
 
