@@ -105,6 +105,16 @@ function Works() {
   });
 
   const totalPages = Math.ceil(filteredGoods.length / ITEMS_PER_PAGE);
+  const getVisiblePages = () => {
+  const range = 10; // 現在ページの前後10ページ
+  const start = Math.max(1, currentPage - range);
+  const end = Math.min(totalPages, currentPage + range);
+
+  return Array.from(
+    { length: end - start + 1 },
+    (_, i) => start + i
+  );
+};
   const paginatedGoods = filteredGoods.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -220,15 +230,15 @@ function Works() {
       {totalPages > 1 && (
         <div className="pagination">
           <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>前へ</button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              className={currentPage === i + 1 ? 'active' : ''}
-            >
-              {i + 1}
-            </button>
-          ))}
+       {getVisiblePages().map(page => (
+  <button
+    key={page}
+    onClick={() => setCurrentPage(page)}
+    className={currentPage === page ? 'active' : ''}
+  >
+    {page}
+  </button>
+))}
           <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>次へ</button>
         </div>
       )}
