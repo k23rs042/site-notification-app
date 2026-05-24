@@ -707,8 +707,8 @@ async function syncGakuenIdolmasterGoods(req, res) {
 
     await initDb();
 
-    const asobistorePages = Number(req.query.asobistorePages || 7);
-    const animatePages = Number(req.query.animatePages || 5);
+    const asobistorePages = Number(req.query.asobistorePages || 20);
+    const animatePages = Number(req.query.animatePages || 20);
 
     const [asobistoreRes, animateRes] = await Promise.allSettled([
       axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=${asobistorePages}`, { timeout: 30000 }),
