@@ -26,7 +26,7 @@ function Works() {
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState([]);
 
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 21;
   const [currentPage, setCurrentPage] = useState(1);
 
   // お気に入りをローカルストレージから読み込み
@@ -63,7 +63,7 @@ function Works() {
         if (!response.ok) throw new Error('asobistoreの取得に失敗しました');
         return response.json();
       }),
-      fetch('https://site-notification-app-3.onrender.com/api/animate?aid=18937&maxPages=3').then(response => {
+      fetch('https://site-notification-app-3.onrender.com/api/animate?aid=18937&maxPages=20').then(response => {
         if (!response.ok) throw new Error('animateの取得に失敗しました');
         return response.json();
       })
