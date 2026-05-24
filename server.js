@@ -4,9 +4,109 @@ const cheerio = require('cheerio');
 const cors = require('cors');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
+const mysql = require('mysql2/promise');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const dbEnabled =
+  process.env.MYSQL_HOST &&
+  process.env.MYSQL_PORT &&
+  process.env.MYSQL_USER &&
+  process.env.MYSQL_PASSWORD &&
+  process.env.MYSQL_DATABASE;
+
+const dbPool = dbEnabled
+  ? mysql.createPool({
+      host: process.env.MYSQL_HOST,
+      port: Number(process.env.MYSQL_PORT),
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DATABASE,
+      waitForConnections: true,
+      connectionLimit: 5,
+      queueLimit: 0,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    })
+  : null;
+
+function hashUrl(url) {
+  return crypto.createHash('sha256').update(url).digest('hex');
+}
+
+async function initDb() {
+  if (!dbPool) {
+    console.warn('MySQL env is not configured');
+    return;
+  }
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS goods (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      work_title VARCHAR(255) NOT NULL,
+      source VARCHAR(50) NOT NULL,
+      name TEXT NOT NULL,
+      url TEXT NOT NULL,
+      url_hash CHAR(64) NOT NULL,
+      image TEXT,
+      price VARCHAR(255),
+      category VARCHAR(100),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_goods_url_hash (url_hash),
+      KEY idx_goods_work_title (work_title),
+      KEY idx_goods_source (source)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+}
+
+async function saveGoodsToDb(items, workTitle) {
+  if (!dbPool) {
+    throw new Error('MySQL env is not configured');
+  }
+
+  const rows = items
+    .filter(item => item && item.url && item.name)
+    .map(item => [
+      workTitle,
+      item.source || '',
+      item.name,
+      item.url,
+      hashUrl(item.url),
+      item.image || '',
+      item.price || '',
+      item.category || 'anime'
+    ]);
+
+  if (rows.length === 0) {
+    return { saved: 0, affectedRows: 0 };
+  }
+
+  const [result] = await dbPool.query(
+    `
+      INSERT INTO goods
+        (work_title, source, name, url, url_hash, image, price, category)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        work_title = VALUES(work_title),
+        source = VALUES(source),
+        name = VALUES(name),
+        image = VALUES(image),
+        price = VALUES(price),
+        category = VALUES(category),
+        updated_at = CURRENT_TIMESTAMP
+    `,
+    [rows]
+  );
+
+  return {
+    saved: rows.length,
+    affectedRows: result.affectedRows
+  };
+}
 // CORS設定
 app.use(cors());
 app.use(express.json());
@@ -524,6 +624,122 @@ app.get('/api/goods/:title', async (req, res) => {
     });
   }
 });
+app.get('/api/db/health', async (req, res) => {
+  try {
+    if (!dbPool) {
+      return res.status(500).json({ ok: false, error: 'MySQL env is not configured' });
+    }
+
+    await initDb();
+    const [rows] = await dbPool.query('SELECT 1 AS ok');
+
+    res.json({ ok: true, db: rows[0].ok });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get('/api/db/goods', async (req, res) => {
+  try {
+    if (!dbPool) {
+      return res.status(500).json({ error: 'MySQL env is not configured' });
+    }
+
+    const workTitle = req.query.workTitle;
+    const source = req.query.source;
+    const limit = Math.min(Number(req.query.limit || 500), 1000);
+
+    const where = [];
+    const params = [];
+
+    if (workTitle) {
+      where.push('work_title = ?');
+      params.push(workTitle);
+    }
+
+    if (source) {
+      where.push('source = ?');
+      params.push(source);
+    }
+
+    params.push(limit);
+
+    const [rows] = await dbPool.query(
+      `
+        SELECT id, work_title, source, name, url, image, price, category, created_at, updated_at
+        FROM goods
+        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ?
+      `,
+      params
+    );
+
+    res.json(rows.map(row => ({
+      id: `db-${row.id}`,
+      workTitle: row.work_title,
+      source: row.source,
+      name: row.name,
+      url: row.url,
+      image: row.image,
+      price: row.price,
+      category: row.category,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    })));
+  } catch (error) {
+    res.status(500).json({ error: 'DBから商品情報を取得できませんでした', message: error.message });
+  }
+});
+
+async function syncGakuenIdolmasterGoods(req, res) {
+  try {
+    if (!dbPool) {
+      return res.status(500).json({ error: 'MySQL env is not configured' });
+    }
+
+    await initDb();
+
+    const asobistorePages = Number(req.query.asobistorePages || 7);
+    const animatePages = Number(req.query.animatePages || 5);
+
+    const [asobistoreRes, animateRes] = await Promise.allSettled([
+      axios.get(`http://localhost:${PORT}/api/asobistore?category=10107&maxPages=${asobistorePages}`, { timeout: 30000 }),
+      axios.get(`http://localhost:${PORT}/api/animate?aid=18937&maxPages=${animatePages}`, { timeout: 30000 })
+    ]);
+
+    const items = [];
+
+    if (asobistoreRes.status === 'fulfilled') {
+      items.push(...asobistoreRes.value.data);
+    } else {
+      console.error('asobistore sync failed:', asobistoreRes.reason.message);
+    }
+
+    if (animateRes.status === 'fulfilled') {
+      items.push(...animateRes.value.data);
+    } else {
+      console.error('animate sync failed:', animateRes.reason.message);
+    }
+
+    const result = await saveGoodsToDb(items, '学園アイドルマスター');
+
+    res.json({
+      success: true,
+      fetched: items.length,
+      saved: result.saved,
+      affectedRows: result.affectedRows
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'DB保存に失敗しました',
+      message: error.message
+    });
+  }
+}
+
+app.get('/api/db/sync/gakuen-idolmaster', syncGakuenIdolmasterGoods);
+app.post('/api/db/sync/gakuen-idolmaster', syncGakuenIdolmasterGoods);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API server running on http://localhost:${PORT}`);
@@ -538,4 +754,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  GET /api/goods/学園アイドルマスター`);
   console.log(`  GET /api/gakuen-idolmaster (学園アイドルマスター専用)`);
   console.log(`  GET /api/my-hero-academia (僕のヒーローアカデミア専用)`);
+  initDb().catch(error => {
+  console.error('DB init error:', error.message);
+});
 }); 
