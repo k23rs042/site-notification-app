@@ -48,54 +48,69 @@ function Works() {
   }, [title]);
 
   // タグ選択時にAPIからグッズ情報を取得
-  useEffect(() => {
-    if (!activeTag) {
-      setGoods([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    
-    // 作品に応じて適切なAPIエンドポイントを選択
-    let apiUrl;
-    if (activeTag === '学園アイドルマスター') {
-      apiUrl = 'https://site-notification-app-3.onrender.com/api/gakuen-idolmaster';
-    } else if (activeTag === '僕のヒーローアカデミア') {
-      apiUrl = 'https://site-notification-app-3.onrender.com/api/my-hero-academia';
-    } else if(activeTag === '原神'){
-      apiUrl = 'https://site-notification-app-3.onrender.com/api/genshin';
-    } else {
-      apiUrl = `https://site-notification-app-3.onrender.com/api/goods/${encodeURIComponent(activeTag)}`;
-    }
-    
-    fetch(apiUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('APIからデータを取得できませんでした');
-        }
+ useEffect(() => {
+  if (!activeTag) {
+    setGoods([]);
+    return;
+  }
+
+  setLoading(true);
+  setError(null);
+
+  if (activeTag === '学園アイドルマスター') {
+    Promise.allSettled([
+      fetch('https://site-notification-app-3.onrender.com/api/asobistore?category=10107&maxPages=7').then(response => {
+        if (!response.ok) throw new Error('asobistoreの取得に失敗しました');
+        return response.json();
+      }),
+      fetch('https://site-notification-app-3.onrender.com/api/animate?aid=18937&maxPages=3').then(response => {
+        if (!response.ok) throw new Error('animateの取得に失敗しました');
         return response.json();
       })
-      .then(data => {
+    ])
+      .then(results => {
+        const data = results.flatMap(result =>
+          result.status === 'fulfilled' && Array.isArray(result.value) ? result.value : []
+        );
+
         setGoods(data);
         setLoading(false);
       })
       .catch(err => {
         setError(err.message);
+        setGoods([]);
         setLoading(false);
-        // エラー時はダミーデータを表示
-        const dummyGoods = Array.from({ length: 10 }, (_, i) => ({
-          id: `${activeTag}-${i + 1}`,
-          title: activeTag,
-          name: `${activeTag}グッズ${i + 1}`,
-          image: 'https://via.placeholder.com/120x120?text=Goods',
-          url: i % 2 === 0
-            ? 'https://shop.asobistore.jp/category/10107/'
-            : 'https://list.amiami.jp/top/search/list?s_originaltitle_id=36257&pagecnt=40&getcnt=0&pagehnt=2',
-          category: allWorks.find(w => w.title === activeTag)?.category || 'anime',
-        }));
-        setGoods(dummyGoods);
       });
-  }, [activeTag]);
+
+    return;
+  }
+
+  let apiUrl;
+  if (activeTag === '僕のヒーローアカデミア') {
+    apiUrl = 'https://site-notification-app-3.onrender.com/api/my-hero-academia';
+  } else if (activeTag === '原神') {
+    apiUrl = 'https://site-notification-app-3.onrender.com/api/genshin';
+  } else {
+    apiUrl = `https://site-notification-app-3.onrender.com/api/goods/${encodeURIComponent(activeTag)}`;
+  }
+
+  fetch(apiUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('APIからデータを取得できませんでした');
+      }
+      return response.json();
+    })
+    .then(data => {
+      setGoods(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      setError(err.message);
+      setGoods([]);
+      setLoading(false);
+    });
+}, [activeTag]);
 
   // 検索・カテゴリフィルタリング
   const filteredGoods = goods.filter(good => {
@@ -245,5 +260,4 @@ function Works() {
     </div>
   );
 }
-
 export default Works; 
