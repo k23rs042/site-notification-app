@@ -3,14 +3,6 @@ import { useParams } from 'react-router-dom';
 import './Works.css';
 
 const allWorks = [
-  { title: '進撃の巨人', category: 'anime' },
-  { title: '鬼滅の刃', category: 'anime' },
-  { title: 'ワンピース', category: 'anime' },
-  { title: 'ドラえもん', category: 'anime' },
-  { title: 'スパイファミリー', category: 'anime' },
-  { title: '呪術廻戦', category: 'anime' },
-  { title: '名探偵コナン', category: 'anime' },
-  { title: 'チェンソーマン', category: 'anime' },
   { title: '原神', category: 'game' },
   { title: '僕のヒーローアカデミア', category: 'anime' },
   { title: '学園アイドルマスター', category: 'game' },

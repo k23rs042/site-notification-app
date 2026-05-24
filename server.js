@@ -673,25 +673,23 @@ app.get('/api/db/goods', async (req, res) => {
     params.push(limit);
 
     const [rows] = await dbPool.query(
-      `
-        SELECT id, work_title, source, name, url, image, price, category, created_at, updated_at
-        FROM goods
-        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-        ORDER BY
-        CASE source
+  `
+    SELECT id, work_title, source, name, url, image, price, category, created_at, updated_at
+    FROM goods
+    ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+    ORDER BY
+      CASE source
         WHEN 'asobistore' THEN 1
         WHEN 'animate' THEN 2
         WHEN 'amiami' THEN 3
         ELSE 9
-        END,
-        source_order ASC,
-        id ASC
-        LIMIT ?
-        '
-      params
-      `
-    );
-
+      END,
+      source_order ASC,
+      id ASC
+    LIMIT ?
+  `,
+  params
+);
     res.json(rows.map(row => ({
       id: `db-${row.id}`,
       workTitle: row.work_title,
