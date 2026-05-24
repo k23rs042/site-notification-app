@@ -58,7 +58,7 @@ function Works() {
   setError(null);
 
   if (activeTag === '学園アイドルマスター') {
-      fetch('https://site-notification-app-3.onrender.com/api/db/goods?workTitle=%E5%AD%A6%E5%9C%92%E3%82%A2%E3%82%A4%E3%83%89%E3%83%AB%E3%83%9E%E3%82%B9%E3%82%BF%E3%83%BC&limit=500')
+  fetch('https://site-notification-app-3.onrender.com/api/db/goods?workTitle=%E5%AD%A6%E5%9C%92%E3%82%A2%E3%82%A4%E3%83%89%E3%83%AB%E3%83%9E%E3%82%B9%E3%82%BF%E3%83%BC&limit=1000')
     .then(response => {
       if (!response.ok) {
         throw new Error('DBからデータを取得できませんでした');
@@ -67,33 +67,20 @@ function Works() {
       return response.json();
     })
     .then(data => {
-      setGoods(data);
+      setGoods(Array.isArray(data) ? data : []);
       setLoading(false);
     })
     .catch(err => {
       setError(err.message);
       setGoods([]);
       setLoading(false);
-    })
-      .then(results => {
-        const data = results.flatMap(result =>
-          result.status === 'fulfilled' && Array.isArray(result.value) ? result.value : []
-        );
+    });
 
-        setGoods(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setGoods([]);
-        setLoading(false);
-      });
-
-    return;
-  }
+  return;
+}
 
   let apiUrl;
-  if (activeTag === '僕のヒーローアカデミア') {
+  if (activeTag === '原神') {
     apiUrl = 'https://site-notification-app-3.onrender.com/api/my-hero-academia';
   } else if (activeTag === '原神') {
     apiUrl = 'https://site-notification-app-3.onrender.com/api/genshin';
