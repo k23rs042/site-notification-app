@@ -26,24 +26,34 @@ function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch('https://site-notification-app-3.onrender.com/api/gakuen-idolmaster')
-      .then(response => {
-        if (!response.ok) throw new Error('APIからデータを取得できませんでした');
-        return response.json();
-      })
-      .then(data => {
-        setGoods(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-        setGoods([]);
-      });
-  }, []);
+useEffect(() => {
+  setLoading(true);
+  setError(null);
+
+  Promise.allSettled([
+    fetch('https://site-notification-app-3.onrender.com/api/asobistore?category=10107&maxPages=7').then(response => {
+      if (!response.ok) throw new Error('asobistoreの取得に失敗しました');
+      return response.json();
+    }),
+    fetch('https://site-notification-app-3.onrender.com/api/animate?aid=18937&maxPages=5').then(response => {
+      if (!response.ok) throw new Error('animateの取得に失敗しました');
+      return response.json();
+    })
+  ])
+    .then(results => {
+      const data = results.flatMap(result =>
+        result.status === 'fulfilled' && Array.isArray(result.value) ? result.value : []
+      );
+
+      setGoods(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      setError(err.message);
+      setGoods([]);
+      setLoading(false);
+    });
+}, []);
 
   // お気に入りを切り替える関数
   const toggleFavorite = (good) => {
