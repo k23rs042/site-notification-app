@@ -58,7 +58,6 @@ function Works() {
   setError(null);
 
   if (activeTag === '学園アイドルマスター') {
-    Promise.allSettled([
       fetch('https://site-notification-app-3.onrender.com/api/db/goods?workTitle=%E5%AD%A6%E5%9C%92%E3%82%A2%E3%82%A4%E3%83%89%E3%83%AB%E3%83%9E%E3%82%B9%E3%82%BF%E3%83%BC&limit=500')
     .then(response => {
       if (!response.ok) {
@@ -76,7 +75,6 @@ function Works() {
       setGoods([]);
       setLoading(false);
     })
-    ])
       .then(results => {
         const data = results.flatMap(result =>
           result.status === 'fulfilled' && Array.isArray(result.value) ? result.value : []
