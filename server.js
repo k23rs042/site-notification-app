@@ -63,10 +63,11 @@ async function initDb() {
       KEY idx_goods_source_order (work_title, source_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
-}
-const [columns] = await dbPool.query("SHOW COLUMNS FROM goods LIKE 'source_order'");
-if (columns.length === 0) {
-  await dbPool.query('ALTER TABLE goods ADD COLUMN source_order INT NOT NULL DEFAULT 999999 AFTER category');
+
+  const [columns] = await dbPool.query("SHOW COLUMNS FROM goods LIKE 'source_order'");
+  if (columns.length === 0) {
+    await dbPool.query('ALTER TABLE goods ADD COLUMN source_order INT NOT NULL DEFAULT 999999 AFTER category');
+  }
 }
 
 
