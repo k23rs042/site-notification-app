@@ -54,14 +54,21 @@ async function initDb() {
       image TEXT,
       price VARCHAR(255),
       category VARCHAR(100),
+      source_order INT NOT NULL DEFAULT 999999,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       UNIQUE KEY unique_goods_url_hash (url_hash),
       KEY idx_goods_work_title (work_title),
-      KEY idx_goods_source (source)
+      KEY idx_goods_source (source),
+      KEY idx_goods_source_order (work_title, source_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
 }
+const [columns] = await dbPool.query("SHOW COLUMNS FROM goods LIKE 'source_order'");
+if (columns.length === 0) {
+  await dbPool.query('ALTER TABLE goods ADD COLUMN source_order INT NOT NULL DEFAULT 999999 AFTER category');
+}
+
 
 async function saveGoodsToDb(items, workTitle) {
   if (!dbPool) {
@@ -70,33 +77,33 @@ async function saveGoodsToDb(items, workTitle) {
 
   const rows = items
     .filter(item => item && item.url && item.name)
-    .map(item => [
-      workTitle,
-      item.source || '',
-      item.name,
-      item.url,
-      hashUrl(item.url),
-      item.image || '',
-      item.price || '',
-      item.category || 'anime'
-    ]);
-
+    .map((item, index) => [
+     workTitle,
+     item.source || '',
+     item.name,
+     item.url,
+     hashUrl(item.url),
+     item.image || '',
+     item.price || '',
+     item.category || 'anime',
+     item.sourceOrder ?? index    ]);
   if (rows.length === 0) {
     return { saved: 0, affectedRows: 0 };
   }
 
   const [result] = await dbPool.query(
     `
-      INSERT INTO goods
-        (work_title, source, name, url, url_hash, image, price, category)
-      VALUES ?
-      ON DUPLICATE KEY UPDATE
+        INSERT INTO goods
+        (work_title, source, name, url, url_hash, image, price, category, source_order)
+        VALUES ?
+        ON DUPLICATE KEY UPDATE
         work_title = VALUES(work_title),
         source = VALUES(source),
         name = VALUES(name),
         image = VALUES(image),
         price = VALUES(price),
         category = VALUES(category),
+        source_order = VALUES(source_order),
         updated_at = CURRENT_TIMESTAMP
     `,
     [rows]
@@ -669,8 +676,7 @@ app.get('/api/db/goods', async (req, res) => {
         SELECT id, work_title, source, name, url, image, price, category, created_at, updated_at
         FROM goods
         ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-        ORDER BY updated_at DESC, id DESC
-        LIMIT ?
+        ORDER BY created_at DESC, source_order ASC, id ASC        LIMIT ?
       `,
       params
     );
@@ -710,17 +716,21 @@ async function syncGakuenIdolmasterGoods(req, res) {
 
     const items = [];
 
-    if (asobistoreRes.status === 'fulfilled') {
-      items.push(...asobistoreRes.value.data);
-    } else {
-      console.error('asobistore sync failed:', asobistoreRes.reason.message);
-    }
+  if (asobistoreRes.status === 'fulfilled') {
+  const asobistoreItems = asobistoreRes.value.data.map((item, index) => ({
+    ...item,
+    sourceOrder: index
+  }));
+  items.push(...asobistoreItems);
+}
 
     if (animateRes.status === 'fulfilled') {
-      items.push(...animateRes.value.data);
-    } else {
-      console.error('animate sync failed:', animateRes.reason.message);
-    }
+  const animateItems = animateRes.value.data.map((item, index) => ({
+    ...item,
+    sourceOrder: index
+  }));
+  items.push(...animateItems);
+}
 
     const result = await saveGoodsToDb(items, '学園アイドルマスター');
 
